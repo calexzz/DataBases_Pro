@@ -68,6 +68,55 @@ begin
 		t_max numeric,
 		delta_tv numeric not null
 	);
+
+	comment on table types_of_equipment is 'Справочник типов оборудования';
+	comment on column types_of_equipment.code is 'Уникальный код типа оборудования';
+	comment on column types_of_equipment.type is 'Наименование типа оборудования';
+	
+	comment on table positions is 'Справочник должностей';
+	comment on column positions.code is 'Уникальный код должности';
+	comment on column positions.title is 'Наименование должности';
+	
+	comment on table users is 'Пользователи';
+	comment on column users.code is 'Уникальный код пользователя';
+	comment on column users.full_name is 'ФИО пользователя';
+	comment on column users.position_id is 'Код должности пользователя';
+	
+	comment on table packs is 'Пачки измерений';
+	comment on column packs.code is 'Уникальный код пачки';
+	comment on column packs.user_id is 'Код пользователя, заведшего пачку';
+	comment on column packs.equipment_type_id is 'Код типа оборудования';
+	comment on column packs.created_at is 'Дата и время создания пачки';
+	
+	comment on table base_units_of_measurement is 'Справочник базовых единиц измерения';
+	comment on column base_units_of_measurement.code is 'Уникальный код базовой единицы';
+	comment on column base_units_of_measurement.name_base_unit is 'Наименование базовой величины';
+	comment on column base_units_of_measurement.symbol_base is 'Обозначение базовой величины';
+	
+	comment on table units_of_measurement is 'Справочник единиц измерения';
+	comment on column units_of_measurement.code is 'Уникальный код единицы измерения';
+	comment on column units_of_measurement.name_unit is 'Наименование единицы измерения';
+	comment on column units_of_measurement.symbol is 'Обозначение единицы';
+	comment on column units_of_measurement.base_unit_code is 'Код базовой единицы измерения';
+	
+	comment on table type_parameters is 'Справочник типов параметров';
+	comment on column type_parameters.code is 'Уникальный код типа параметра';
+	comment on column type_parameters.name_type_parameter is 'Наименование параметра';
+	comment on column type_parameters.id_unit is 'Код единицы измерения';
+	comment on column type_parameters.min_value is 'Минимальное значение';
+	comment on column type_parameters.max_value is 'Максимальное значение';
+	
+	comment on table parameters is 'Измеренные значения параметров';
+	comment on column parameters.code is 'Уникальный код записи параметра';
+	comment on column parameters.pack_id is 'Код пачки';
+	comment on column parameters.type_parameter_code is 'Код типа параметра';
+	comment on column parameters.value is 'Значение параметра';
+	
+	comment on table virtual_corrections is 'Виртуальная поправка к температуре (таблица 1 расчёта температуры)';
+	comment on column virtual_corrections.code is 'Уникальный код записи';
+	comment on column virtual_corrections.t_min is 'Нижняя граница измеренной температуры, °C';
+	comment on column virtual_corrections.t_max is 'Верхняя граница измеренной температуры, °C';
+	comment on column virtual_corrections.delta_tv is 'Виртуальная поправка ΔTv, °C';
 end $$;
 
 -- заполнение тестовыми данными
