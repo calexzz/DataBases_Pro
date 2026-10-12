@@ -1,0 +1,227 @@
+-- создание структуры таблиц + счетчики
+do $$
+begin
+	begin
+	create sequence if not exists seq_types_of_equipment;
+	create sequence if not exists seq_positions;
+	create sequence if not exists seq_users;
+	create sequence if not exists seq_packs;
+	create sequence if not exists seq_parameters;
+	create sequence if not exists seq_base_units_of_measurement;
+	create sequence if not exists seq_units_of_measurement;
+	create sequence if not exists seq_type_parameters;
+	create sequence if not exists seq_virtual_corrections;
+
+	create table if not exists types_of_equipment (
+		code int primary key default nextval('seq_types_of_equipment'),
+		type text not null
+	);
+
+	create table if not exists positions (
+		code int primary key default nextval('seq_positions'),
+		title text not null
+	);
+
+	create table if not exists users (
+		code int primary key default nextval('seq_users'),
+		full_name text not null,
+		position_id int not null
+	);
+
+	create table if not exists packs (
+		code int primary key default nextval('seq_packs'),
+		user_id int not null,
+		equipment_type_id int not null,
+		created_at timestamp not null default current_timestamp
+	);
+
+	create table if not exists base_units_of_measurement (
+		code int primary key default nextval('seq_base_units_of_measurement'),
+		name_base_unit varchar(100) not null,
+		symbol_base varchar(12) not null
+	);
+
+	create table if not exists units_of_measurement (
+		code int primary key default nextval('seq_units_of_measurement'),
+		name_unit varchar(100) not null,
+		symbol varchar(10),
+		base_unit_code int
+	);
+
+	create table if not exists type_parameters (
+		code int primary key default nextval('seq_type_parameters'),
+		name_type_parameter varchar(100) not null,
+		id_unit int not null,
+		min_value numeric,
+		max_value numeric
+	);
+
+	create table if not exists parameters (
+		code int primary key default nextval('seq_parameters'),
+		pack_id int not null,
+		type_parameter_code int not null,
+		value numeric not null
+	);
+
+	create table if not exists virtual_corrections (
+		code int primary key default nextval('seq_virtual_corrections'),
+		t_min numeric,
+		t_max numeric,
+		delta_tv numeric not null
+	);
+
+	comment on table types_of_equipment is 'Справочник типов оборудования';
+	comment on column types_of_equipment.code is 'Уникальный код типа оборудования';
+	comment on column types_of_equipment.type is 'Наименование типа оборудования';
+	
+	comment on table positions is 'Справочник должностей';
+	comment on column positions.code is 'Уникальный код должности';
+	comment on column positions.title is 'Наименование должности';
+	
+	comment on table users is 'Пользователи';
+	comment on column users.code is 'Уникальный код пользователя';
+	comment on column users.full_name is 'ФИО пользователя';
+	comment on column users.position_id is 'Код должности пользователя';
+	
+	comment on table packs is 'Пачки измерений';
+	comment on column packs.code is 'Уникальный код пачки';
+	comment on column packs.user_id is 'Код пользователя, заведшего пачку';
+	comment on column packs.equipment_type_id is 'Код типа оборудования';
+	comment on column packs.created_at is 'Дата и время создания пачки';
+	
+	comment on table base_units_of_measurement is 'Справочник базовых единиц измерения';
+	comment on column base_units_of_measurement.code is 'Уникальный код базовой единицы';
+	comment on column base_units_of_measurement.name_base_unit is 'Наименование базовой величины';
+	comment on column base_units_of_measurement.symbol_base is 'Обозначение базовой величины';
+	
+	comment on table units_of_measurement is 'Справочник единиц измерения';
+	comment on column units_of_measurement.code is 'Уникальный код единицы измерения';
+	comment on column units_of_measurement.name_unit is 'Наименование единицы измерения';
+	comment on column units_of_measurement.symbol is 'Обозначение единицы';
+	comment on column units_of_measurement.base_unit_code is 'Код базовой единицы измерения';
+	
+	comment on table type_parameters is 'Справочник типов параметров';
+	comment on column type_parameters.code is 'Уникальный код типа параметра';
+	comment on column type_parameters.name_type_parameter is 'Наименование параметра';
+	comment on column type_parameters.id_unit is 'Код единицы измерения';
+	comment on column type_parameters.min_value is 'Минимальное значение';
+	comment on column type_parameters.max_value is 'Максимальное значение';
+	
+	comment on table parameters is 'Измеренные значения параметров';
+	comment on column parameters.code is 'Уникальный код записи параметра';
+	comment on column parameters.pack_id is 'Код пачки';
+	comment on column parameters.type_parameter_code is 'Код типа параметра';
+	comment on column parameters.value is 'Значение параметра';
+	
+	comment on table virtual_corrections is 'Виртуальная поправка к температуре (таблица 1 расчёта температуры)';
+	comment on column virtual_corrections.code is 'Уникальный код записи';
+	comment on column virtual_corrections.t_min is 'Нижняя граница измеренной температуры, °C';
+	comment on column virtual_corrections.t_max is 'Верхняя граница измеренной температуры, °C';
+	comment on column virtual_corrections.delta_tv is 'Виртуальная поправка ΔTv, °C';
+	end;
+	commit;
+	
+-- заполнение тестовыми данными
+begin
+	insert into types_of_equipment(type) values
+	('ДМК'),
+	('ВР');
+
+	insert into positions(title) values
+	('Рядовой'),
+	('Сержант'),
+	('Мл. Сержант'),
+	('Ст. Сержант'),
+	('Лейтенант');
+
+	insert into users(full_name, position_id) values
+	('Иванов Иван Иванович', 1),
+	('Петров Пётр Петрович', 2),
+	('Сидоров Сидор Сидорович', 5),
+	('Попов Павел Павлович', 3);
+
+	insert into packs(user_id, equipment_type_id) values
+	(1, 1),
+	(2, 2),
+	(3, 1),
+	(4, 2);
+
+	insert into base_units_of_measurement(name_base_unit, symbol_base) values
+	('Длина', 'м'),
+	('Температура', '°C'),
+	('Давление', 'мм рт. ст.'),
+	('Скорость', 'м/с'),
+	('Угол', 'д.у.');
+
+	insert into units_of_measurement(name_unit, symbol, base_unit_code) values
+	('Метр', 'м', 1),
+	('Градус Цельсия', '°C', 2),
+	('Миллиметр ртутного столба', 'мм рт. ст.', 3),
+	('Метр в секунду', 'м/с', 4),
+	('Деление угломера', 'д.у.', 5);
+
+	insert into type_parameters(name_type_parameter, id_unit, min_value, max_value) values
+	('Высота метеопоста', 1, null, null),
+	('Температура', 2, -58, 58),
+	('Давление', 3, 500, 900),
+	('Направление ветра', 5, 0, 59),
+	('Скорость ветра', 4, 0, 15),
+	('Дальность сноса пуль', 1, 0, 150);
+
+	insert into parameters(pack_id, type_parameter_code, value) values
+	(1, 1, 100), (1, 2, 15), (1, 3, 750), (1, 4, 30), (1, 5, 5),
+	(2, 1, 100), (2, 2, 15), (2, 3, 750), (2, 4, 15), (2, 6, 12),
+	(3, 1, 120), (3, 2, 22), (3, 3, 740), (3, 4, 45), (3, 5, 8),
+	(4, 1, 85),  (4, 2, -5), (4, 3, 765), (4, 4, 10), (4, 6, 20);
+
+	insert into virtual_corrections(t_min, t_max, delta_tv) values
+	(null, 0, 0),
+	(0, 5, 0.5),
+	(10, 15, 1),
+	(20, 20, 1.5),
+	(25, 25, 2),
+	(30, 30, 3.5),
+	(40, 40, 4.5);
+	end;
+	commit;
+
+-- связи и ограничения
+begin
+	alter table users drop constraint if exists fk_users_position;
+	alter table users add constraint fk_users_position
+		foreign key (position_id) references positions(code);
+
+	alter table packs drop constraint if exists fk_packs_user;
+	alter table packs add constraint fk_packs_user
+		foreign key (user_id) references users(code);
+
+	alter table packs drop constraint if exists fk_packs_equipment_type;
+	alter table packs add constraint fk_packs_equipment_type
+		foreign key (equipment_type_id) references types_of_equipment(code);
+
+	alter table parameters drop constraint if exists fk_parameters_pack;
+	alter table parameters add constraint fk_parameters_pack
+		foreign key (pack_id) references packs(code);
+
+	alter table parameters drop constraint if exists fk_parameters_type_parameter;
+	alter table parameters add constraint fk_parameters_type_parameter
+		foreign key (type_parameter_code) references type_parameters(code);
+
+	alter table type_parameters drop constraint if exists fk_type_parameters_unit;
+	alter table type_parameters add constraint fk_type_parameters_unit
+		foreign key (id_unit) references units_of_measurement(code);
+
+	alter table units_of_measurement drop constraint if exists fk_units_base_unit;
+	alter table units_of_measurement add constraint fk_units_base_unit
+		foreign key (base_unit_code) references base_units_of_measurement(code);
+
+	alter table type_parameters drop constraint if exists chk_type_parameters_min_max;
+	alter table type_parameters add constraint chk_type_parameters_min_max
+		check (min_value is null or max_value is null or min_value <= max_value);
+
+	alter table virtual_corrections drop constraint if exists chk_virtual_corrections_t;
+	alter table virtual_corrections add constraint chk_virtual_corrections_t
+		check (t_min is null or t_max is null or t_min <= t_max);
+	end;
+	commit;
+end $$;
