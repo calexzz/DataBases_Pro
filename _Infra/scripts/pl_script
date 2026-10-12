@@ -1,6 +1,7 @@
 -- создание структуры таблиц + счетчики
 do $$
 begin
+	begin
 	create sequence if not exists seq_types_of_equipment;
 	create sequence if not exists seq_positions;
 	create sequence if not exists seq_users;
@@ -117,10 +118,10 @@ begin
 	comment on column virtual_corrections.t_min is 'Нижняя граница измеренной температуры, °C';
 	comment on column virtual_corrections.t_max is 'Верхняя граница измеренной температуры, °C';
 	comment on column virtual_corrections.delta_tv is 'Виртуальная поправка ΔTv, °C';
-end $$;
-
+	end;
+	commit;
+	
 -- заполнение тестовыми данными
-do $$
 begin
 	insert into types_of_equipment(type) values
 	('ДМК'),
@@ -181,10 +182,10 @@ begin
 	(25, 25, 2),
 	(30, 30, 3.5),
 	(40, 40, 4.5);
-end $$;
+	end;
+	commit;
 
 -- связи и ограничения
-do $$
 begin
 	alter table users drop constraint if exists fk_users_position;
 	alter table users add constraint fk_users_position
@@ -221,4 +222,6 @@ begin
 	alter table virtual_corrections drop constraint if exists chk_virtual_corrections_t;
 	alter table virtual_corrections add constraint chk_virtual_corrections_t
 		check (t_min is null or t_max is null or t_min <= t_max);
+	end;
+	commit;
 end $$;
