@@ -31,19 +31,40 @@ begin
     update public.type_parameters set error_code = 4 where code = 5 and error_code is null;
     update public.type_parameters set error_code = 5 where code = 6 and error_code is null;
 
-    -- новый тип: список параметров
-    if not exists (select 1 from pg_type where typname = 'meteo_params_type') then
-        create type public.meteo_params_type as (
-            post_height numeric,
-            temperature numeric,
-            pressure numeric,
-            wind_direction numeric,
-            wind_speed numeric,
-            bullet_drift_range numeric
-        );
-    end if;
+	-- таблица применимых параметров
+	create table if not exists public.equipment_type_parameters (
+        equipment_type_code integer not null,
+        type_parameter_code integer not null,
+        primary key (equipment_type_code, type_parameter_code)
+    );
 
-    -- функция проверки: на входе тип, на выходе строка со списком ошибок
+    comment on table public.equipment_type_parameters is 'Какие входные параметры применимы к типу оборудования';
+
+    insert into public.equipment_type_parameters (equipment_type_code, type_parameter_code)
+    select te.code, tp.code
+    from public.types_of_equipment te
+    join public.type_parameters tp
+      on (te.type = 'ДМК' and tp.code in (1, 2, 3, 4, 5))
+      or (te.type = 'ВР'  and tp.code in (1, 2, 3, 4, 6))
+    where not exists (
+        select 1 from public.equipment_type_parameters x
+        where x.equipment_type_code = te.code and x.type_parameter_code = tp.code
+    );
+
+    -- новый тип: список параметров
+    drop function if exists public.check_meteo_params(public.meteo_params_type);
+    drop type if exists public.meteo_params_type;
+
+    create type public.meteo_params_type as (
+        equipment_type_code integer,
+        post_height numeric,
+        temperature numeric,
+        pressure numeric,
+        wind_direction numeric,
+        wind_speed numeric,
+        bullet_drift_range numeric
+    );
+
     execute $f$
         create or replace function public.check_meteo_params(p public.meteo_params_type)
         returns text
@@ -53,7 +74,7 @@ begin
             v_result text;
         begin
             select string_agg(
-				e.description || case when v.val is null then ' (' || t.name_type_parameter || ')' else '' end,
+				e.description || case when v.val is null then ' (' || t.name_type_parameter || ')' else '' end, 
 				', ' order by t.code)
             into v_result
             from (values
@@ -64,6 +85,9 @@ begin
                 (5, p.wind_speed),
                 (6, p.bullet_drift_range)
             ) as v(type_code, val)
+            join public.equipment_type_parameters ep
+              on ep.equipment_type_code = p.equipment_type_code
+             and ep.type_parameter_code = v.type_code
             join public.type_parameters t on t.code = v.type_code
             join public.errors e on e.code = case when v.val is null then 0 else t.error_code end
             where v.val is null
