@@ -1,5 +1,25 @@
 do $do$
 begin
+	-- справочник ошибок
+    create table if not exists public.errors (
+        code integer primary key,
+        description varchar(200) not null
+    );
+
+    comment on table public.errors is 'Справочник ошибок входных параметров';
+
+    insert into public.errors (code, description)
+    select v.code, v.description
+    from (values
+        (0, 'Отсутствует значение'),
+        (1, 'Температура вне допустимого диапазона'),
+        (2, 'Давление вне допустимого диапазона'),
+        (3, 'Направление ветра вне допустимого диапазона'),
+        (4, 'Скорость ветра вне допустимого диапазона'),
+        (5, 'Дальность сноса пуль вне допустимого диапазона')
+    ) as v(code, description)
+    where not exists (select 1 from public.errors e where e.code = v.code);
+	
     -- у каждого параметра свой код ошибки диапазона
     alter table public.type_parameters add column if not exists error_code integer;
 
