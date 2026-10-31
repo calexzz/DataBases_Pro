@@ -1,0 +1,76 @@
+do $do$
+begin
+    -- ДДЧЧМ: день месяца, часы, десятки минут
+    execute $f$
+        create or replace function public.calc_meteo_ddchhm(par_time timestamp)
+        returns text
+        language plpgsql
+        stable
+        as $body$
+        begin
+            if par_time is null then
+                return null;
+            end if;
+
+            return to_char(par_time, 'DDHH24')
+                || floor(extract(minute from par_time) / public.get_meteo_constant('minutes_step'))::integer::text;
+        end
+        $body$
+    $f$;
+
+    -- ВВВВ: высота метеопоста, 4 цифры
+    execute $f$
+        create or replace function public.calc_meteo_vvvv(par_height numeric)
+        returns text
+        language plpgsql
+        immutable
+        as $body$
+        begin
+            if par_height is null or round(par_height) < 0 or round(par_height) > 9999 then
+                return null;
+            end if;
+
+            return lpad(round(par_height)::integer::text, 4, '0');
+        end
+        $body$
+    $f$;
+
+    -- БББТТ: БББ отклонение давления, ТТ отклонение виртуальной температуры
+    execute $f$
+        create or replace function public.calc_meteo_bbbtt(par_temperature numeric, par_pressure numeric)
+        returns text
+        language plpgsql
+        stable
+        as $body$
+        declare
+            var_delta_pressure integer;
+            var_delta_temperature integer;
+            var_virtual numeric;
+        begin
+            if par_temperature is null or par_pressure is null then
+                return null;
+            end if;
+
+            var_delta_pressure := round(par_pressure - public.get_meteo_constant('normal_pressure'));
+
+            var_virtual := par_temperature
+                + public.calc_interpolation(par_temperature, public.get_interpolation_params(par_temperature));
+            var_delta_temperature := round(var_virtual - public.get_meteo_constant('normal_temperature'));
+
+            if var_delta_pressure < 0 then
+                var_delta_pressure := abs(var_delta_pressure) + public.get_meteo_constant('pressure_negative_offset');
+            end if;
+
+            if var_delta_temperature < 0 then
+                var_delta_temperature := abs(var_delta_temperature) + public.get_meteo_constant('temperature_negative_offset');
+            end if;
+
+            if var_delta_pressure > 999 or var_delta_temperature > 99 then
+                return null;
+            end if;
+
+            return lpad(var_delta_pressure::text, 3, '0') || lpad(var_delta_temperature::text, 2, '0');
+        end
+        $body$
+    $f$;
+end $do$;
