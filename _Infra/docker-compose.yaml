@@ -36,6 +36,7 @@ services:
 
   mssql2017:
     image: mcr.microsoft.com/mssql/server:2017-latest
+    platform: linux/amd64
     container_name: mssql2017
     hostname: mssql
     environment:
