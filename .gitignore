@@ -10,6 +10,10 @@
 .idea/
 _Infra/.env
 _Infra/pgadmin/
+_Infra/backup/
+_Infra/mssql-data/
+_Infra/postgres-data/
+_Infra/_env
 
 # Icon must end with two \r
 Icon
