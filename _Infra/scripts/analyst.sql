@@ -36,7 +36,7 @@ from dbo.bm_StorageOperations_Table t
 left join dbo.bm_ReasonDebit r on r.ID = t.ReasonID
 where t.ReasonID <> 0;
 
--- journal personnel - loginid (loginid is text, so try_cast)
+-- journal personnel - loginid
 select count(*) as Total,
        count(p.personid) as Found
 from dbo.journal j
@@ -45,11 +45,11 @@ where j.loginid <> '';
 
 -- Поставщики
 
--- bm_JournalBarnetDocs journal - TicketNumber (receiptn is not unique, so distinct)
+-- bm_JournalBarnetDocs journal - TicketNumber
 select count(*) as Total,
        count(j.receiptn) as Found
 from dbo.bm_JournalBarnetDocs d
-left join (select distinct receiptn from dbo.journal) j on j.receiptn = d.TicketNumber
+left join dbo.journal j on j.receiptn = d.TicketNumber
 where d.TicketNumber is not null and d.TicketNumber <> 0;
 
 -- Персонал
@@ -75,7 +75,7 @@ from dbo.bm_PersonnelSecurity x
 left join dbo.personnel p on p.personid = x.PersonID
 where x.PersonID <> 0;
 
--- bm_BonusHistory journal - TicketNumber (text column, so try_cast; receiptn is not unique, so distinct)
+-- bm_BonusHistory journal - TicketNumber
 select count(*) as Total,
        count(j.receiptn) as Found
 from dbo.bm_BonusHistory b
